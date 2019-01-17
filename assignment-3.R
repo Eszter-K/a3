@@ -1,26 +1,45 @@
 library(tidyverse)
 library(xml2)
 library(RCurl)
+library(stringr)
 base_url <- "https://www.cia.gov/library/publications/the-world-factbook/"
 
 
 #' Question 1: Get Population Ranking
-#'
-#' @return
+#'This is a specific function for retrieving country name, country link, population, and population 
+#'rank from the CIA World Factbook.
+#'Find the generalized version of the function in 
+#' @return 
 #' @export
 #'
 #' @examples
-get_population_ranking <- function(){
+
+get_population_ranking <- function(url){
+  
   xpath_expressions <- c("country_link" = "//td[@class='region']/a/@href",
                          "country" = "//td[@class='region']/a",
                          "value" = "//tr/td[3]",
                          "rank" = "//tr/td[1]")
-  url = str_c(base_url, "fields/335rank.html")
-  #download url and execute all XPath queries which will each return a column for a data_frame
   
-  #make the necessary adjustments to the data frame as given by the assignment
+  url = str_c(base_url, "fields/335rank.html")
+  
+  #download url and execute all XPath queries which will each return a column for a data_frame
+  raw_html <- read_html(getURL(url, .encoding = "UTF-8", .opts = list(followlocation = FALSE)))
+  
+  myList<- vector("list",4)
+  xpath <- vector("character", length = 4)
+  
+  for (i in seq_len(4)) {
+    xpath[[i]] <- xpath_expressions[[i]]
+    text = raw_html %>% xml_find_all(xpath[[i]]) %>% as_list() %>% unlist() %>% 
+      strsplit("\"$") %>% enframe() %>% select(-name) -> myList[[i]] 
+  }
+  
+  output <- data.frame(matrix(unlist(myList), nrow=238))
+  colnames(output) <- c("country_link", "country", "population", "rank.population")
+  output[[1]] <- str_extract(output[[1]], "[^../]+.{8}")              
+  output
 }
-
 
 #' Question 2: Retrieve Land Area
 #'
