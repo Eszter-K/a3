@@ -41,6 +41,8 @@ get_population_ranking <- function(url){
   output
 }
 
+df <- get_population_ranking()
+
 #' Question 2: Retrieve Land Area
 #'
 #' @param country_link A character vector of one or more country_link urls
@@ -49,11 +51,25 @@ get_population_ranking <- function(url){
 #' @export
 #'
 #' @examples
-get_land_area <- function(country_link){
-  xpath <- str_c("//div[@id='","field-area","']/div[",2,"]/span[2]")
-  #download the file from country_link and execute the xpath query
-}
 
+get_land_area <- function(country_link){
+  
+  xpath <- str_c("//div[@id='","field-area","']/div[",2,"]/span[2]")
+  
+  #download the file from country_link and execute the xpath query
+  
+  output <- vector("character", length = length(country_link))
+  url <- vector("character", length = length(country_link)) 
+  raw_html <- vector("list", length = length(country_link))
+  
+  url = str_c(base_url, country_link)
+  for (i in seq_along(country_link)) {
+  raw_html[[i]] <- read_html(getURL(url[i], .encoding = "UTF-8", .opts = list(followlocation = FALSE))) %>% 
+    xml_find_all(xpath) %>% as_list() %>% unlist() 
+ output[i] <- raw_html[[i]]
+  }
+  output
+}
 
 #' Question 3: Get Population Density
 #'
