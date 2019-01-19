@@ -41,8 +41,6 @@ get_population_ranking <- function(url){
   output
 }
 
-df <- get_population_ranking()
-
 #' Question 2: Retrieve Land Area
 #'
 #' @param country_link A character vector of one or more country_link urls
@@ -53,16 +51,15 @@ df <- get_population_ranking()
 #' @examples
 
 get_land_area <- function(country_link){
-  
   xpath <- str_c("//div[@id='","field-area","']/div[",2,"]/span[2]")
   
-  #download the file from country_link and execute the xpath query
-  
+#some output vectors
   output <- vector("character", length = length(country_link))
   url <- vector("character", length = length(country_link)) 
   raw_html <- vector("list", length = length(country_link))
-  
   url = str_c(base_url, country_link)
+  
+#download the file from country_link and execute the xpath query
   for (i in seq_along(country_link)) {
   raw_html[[i]] <- read_html(getURL(url[i], .encoding = "UTF-8", .opts = list(followlocation = FALSE))) %>% 
     xml_find_all(xpath) %>% as_list() %>% unlist() 
@@ -78,9 +75,22 @@ get_land_area <- function(country_link){
 #'
 #' @examples
 get_population_density <- function(){
+  pop_ranking <- get_population_ranking()
+  links <- pop_ranking$country_link
+  area <- get_land_area(country_link = links)
+  area[10] <- 1000000 #replace 1 million with 1000000
+  area <- str_replace_all(area, "[,]", "") #remove commas
+  area <- str_extract(area, "[0-9]+.[0-9]*")#remove sq km
+  area <- as.numeric(area)
   
-}
-
+  #convert pop to numeric vector
+  pop <- as.character(pop_ranking$population) %>%  str_replace_all("[,]", "") %>% as.numeric()
+  #create output df
+  pop_ranking <-  mutate (pop_ranking,
+    land_area = area, population_density = pop/area)
+  pop_ranking
+} 
+pop <- get_population_density()
 
 #' Question 4: Get All Provided Rankings
 #'
@@ -92,7 +102,24 @@ get_rankings <- function(){
   url <- "https://www.cia.gov/library/publications/the-world-factbook/docs/rankorderguide.html"
   xpath <- c("characteristic" = "//div[@class='field_label']/strong/a",
              "characteristic_link" = "//div[@class='field_label']/strong/a/@href")
-  #...
+  
+  raw_html <- read_html(getURL(url, .encoding = "UTF-8", .opts = list(followlocation = FALSE)))
+  
+  myList<- vector("list",4)
+  queries <- vector("character", length = 4)
+  
+  for (i in seq_len(4)) {#change seq
+    queries[[i]] <- xpath[[i]]
+    text = raw_html %>% xml_find_all(xpath[[i]]) %>% as_list() %>% unlist() %>% 
+      strsplit("\"$") %>% enframe() %>% select(-name) -> myList[[i]] 
+  }
+  
+  output <- data.frame(matrix(unlist(myList), nrow=238))
+  colnames(output) <- c("country_link", "country", "population", "rank.population")
+  output[[1]] <- str_extract(output[[1]], "[^../]+.{8}")              
+  output
+}
+
 }
 
 
