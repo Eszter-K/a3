@@ -159,9 +159,20 @@ get_ranking <- function(url = "fields/335rank.html", characteristic = "populatio
 #'
 #' @examples
 get_country_characteristic <- function(country_link, xpath_field_id = "field-area", item = 2){
-  #update the xpath and use similar code other than that
-}
-
+  #update the xpath
+    xpath <- str_c("//div[@id='", xpath_field_id, "']/div[", item, "]/span[", item, "]")
+    url <- vector("character", length = length(country_link)) 
+    myList <- vector("list", length = length(country_link))
+    url = str_c(base_url, country_link)
+    
+    #download the file from country_link and execute the xpath query
+    for (i in seq_along(country_link)){
+    read_html(getURL(url[i], .encoding = "UTF-8", .opts = list(followlocation = FALSE))) %>% 
+      xml_find_all(xpath) %>% as_list() %>% unlist() %>%  enframe() %>% select(-name) -> myList[[i]]
+    }
+    output <- as.vector(unlist(myList))
+    output
+  }
 
 #' Question 6: Combine Rankings
 #'
