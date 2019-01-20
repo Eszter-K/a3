@@ -100,8 +100,6 @@ pop <- get_population_density()
 #' @examples
 get_rankings <- function(){
   url <- "https://www.cia.gov/library/publications/the-world-factbook/docs/rankorderguide.html"
-  xpath <- c("characteristic" = "//div[@class='field_label']/strong/a",
-             "characteristic_link" = "//div[@class='field_label']/strong/a/@href") #this is unnecesary
   
   raw_html <- read_html(getURL(url, .encoding = "UTF-8", .opts = list(followlocation = FALSE)))
   
@@ -111,8 +109,10 @@ get_rankings <- function(){
   text2 = raw_html %>% xml_find_all("//div[@class='field_label']/strong/a/@href") %>% as_list() %>% unlist() %>%
     str_extract("[^../]+.{8}") %>% enframe() %>% select(-name) 
   
-  output <- cbind(text, text2)
-  colnames(output) <- c("characteristic_link", "characteristic")
+  output <- cbind(text1, text2)
+  colnames(output) <- c("characteristic", "characteristic_link")
+  output$characteristic_link <- str_c(output$characteristic_link, ".html") 
+  #I add .html to the links, to make them work
   output
 }
 
@@ -183,8 +183,18 @@ get_country_characteristic <- function(country_link, xpath_field_id = "field-are
 #'
 #' @examples
 combine_rankings <- function(rankings){
+  url <- rankings$characteristic_link
+  characteristic <- rankings$characteristic
   
+  out <- vector("list", length = (nrow(rankings)))
+  
+  for (i in seq_along(url)){
+  out[[i]]  <- get_ranking(url = url[i], characteristic = characteristic[i])
+  }
+  fin <- reduce(out, full_join)
+  fin
 }
 
-
+cc <- cc[-(5:77)]
+u <- combine_rankings(rankings = cc)
 
