@@ -130,7 +130,22 @@ get_ranking <- function(url = "fields/335rank.html", characteristic = "populatio
                          "country" = "//td[@class='region']/a",
                          "value" = "//tr/td[3]",
                          "rank" = "//tr/td[1]")
-  #...
+  
+  url1 <- str_c(base_url, url) 
+  xpath <- vector("character", length = 4)
+  raw_html <- read_html(getURL(url1, .encoding = "UTF-8", .opts = list(followlocation = FALSE)))
+  myList<- vector("list",4)
+  
+  for (i in seq_len(4)) {
+    xpath[[i]] <- xpath_expressions[[i]]
+    #iterate and save into df cols
+    text = raw_html %>% xml_find_all(xpath[[i]]) %>% as_list() %>% unlist() -> myList[[i]]
+  }
+  name <- str_c("rank_", characteristic)
+  output <- data.frame(matrix(unlist(myList), nrow = length(myList[[1]])))
+  output[[1]] <- str_extract(output[[1]], "[^../]+.{8}")    
+  output %>% rename(!!characteristic:=X3, country_link = X1, country = X2, !!name:=X4) -> output
+  output
 }
 
 #' Question 5 - Part 2: Get Country Characteristic
