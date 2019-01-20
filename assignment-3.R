@@ -101,27 +101,20 @@ pop <- get_population_density()
 get_rankings <- function(){
   url <- "https://www.cia.gov/library/publications/the-world-factbook/docs/rankorderguide.html"
   xpath <- c("characteristic" = "//div[@class='field_label']/strong/a",
-             "characteristic_link" = "//div[@class='field_label']/strong/a/@href")
+             "characteristic_link" = "//div[@class='field_label']/strong/a/@href") #this is unnecesary
   
   raw_html <- read_html(getURL(url, .encoding = "UTF-8", .opts = list(followlocation = FALSE)))
   
-  myList<- vector("list",4)
-  queries <- vector("character", length = 4)
+  text1 = raw_html %>% xml_find_all("//div[@class='field_label']/strong/a") %>% as_list() %>% unlist() %>%
+    str_replace_all("[:]", "") %>% str_to_lower() %>% enframe() %>% select(-name) 
   
-  for (i in seq_len(4)) {#change seq
-    queries[[i]] <- xpath[[i]]
-    text = raw_html %>% xml_find_all(xpath[[i]]) %>% as_list() %>% unlist() %>% 
-      strsplit("\"$") %>% enframe() %>% select(-name) -> myList[[i]] 
-  }
+  text2 = raw_html %>% xml_find_all("//div[@class='field_label']/strong/a/@href") %>% as_list() %>% unlist() %>%
+    str_extract("[^../]+.{8}") %>% enframe() %>% select(-name) 
   
-  output <- data.frame(matrix(unlist(myList), nrow=238))
-  colnames(output) <- c("country_link", "country", "population", "rank.population")
-  output[[1]] <- str_extract(output[[1]], "[^../]+.{8}")              
+  output <- cbind(text, text2)
+  colnames(output) <- c("characteristic_link", "characteristic")
   output
 }
-
-}
-
 
 #' Question 5 - Part 1: Get Ranking
 #'
